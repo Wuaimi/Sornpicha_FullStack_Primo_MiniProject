@@ -1,0 +1,24 @@
+{
+  "name": "typescript-merge-algorithm",
+  "version": "1.0.0",
+  "description": "Merge three pre-sorted integer collections (two ascending, one descending) into one ascending array with a k-way merge (k = 3), without any sort function.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "npm run build && node dist/example.js",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.19.43",
+    "@vitest/coverage-v8": "^5.1.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.1"
+  }
+}
