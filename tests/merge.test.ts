@@ -128,3 +128,65 @@ describe("merge: invalid input", () => {
     expect(() => merge(withString, [], [])).toThrow(TypeError);
   });
 });
+
+// --- Randomized test -------------------------------------------------------
+// The oracle must not sort either, so it checks two properties independently:
+// the output is non-decreasing, and it holds exactly the same multiset of values.
+
+/** Small seeded PRNG (mulberry32) so failures are reproducible. */
+function createRandom(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function randomInt(random: () => number, min: number, max: number): number {
+  return min + Math.floor(random() * (max - min + 1));
+}
+
+/** Builds a sorted array without sorting: start somewhere, then step by a random delta. */
+function randomSorted(random: () => number, direction: 1 | -1): number[] {
+  const length = randomInt(random, 0, 15);
+  const values: number[] = [];
+  let current = randomInt(random, -30, 30);
+  for (let i = 0; i < length; i++) {
+    values.push(current);
+    current += direction * randomInt(random, 0, 4); // delta 0 produces duplicates
+  }
+  return values;
+}
+
+function countValues(...collections: readonly (readonly number[])[]): Map<number, number> {
+  const counts = new Map<number, number>();
+  for (const collection of collections) {
+    for (const value of collection) {
+      counts.set(value, (counts.get(value) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+describe("merge: randomized (seeded)", () => {
+  it("returns a non-decreasing array with the same multiset as the inputs", () => {
+    const random = createRandom(20240607);
+
+    for (let run = 0; run < 300; run++) {
+      const collection1 = randomSorted(random, 1);
+      const collection2 = randomSorted(random, -1);
+      const collection3 = randomSorted(random, 1);
+
+      const result = merge(collection1, collection2, collection3);
+
+      expect(result).toHaveLength(collection1.length + collection2.length + collection3.length);
+      for (let i = 1; i < result.length; i++) {
+        expect(result[i]).toBeGreaterThanOrEqual(result[i - 1] as number);
+      }
+      expect(countValues(result)).toEqual(countValues(collection1, collection2, collection3));
+    }
+  });
+});
